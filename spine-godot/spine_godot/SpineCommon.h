@@ -74,6 +74,11 @@ using namespace godot;
 #if VERSION_MAJOR > 3
 #include "core/core_bind.h"
 #include "core/error/error_macros.h"
+#if VERSION_MAJOR > 4 || (VERSION_MAJOR == 4 && VERSION_MINOR >= 7)
+#include "core/object/callable_mp.h"
+#else
+#include "core/object/callable_method_pointer.h"
+#endif
 #define REFCOUNTED RefCounted
 #define EMPTY(x) ((x).is_empty())
 #define EMPTY_PTR(x) ((x)->is_empty())
@@ -123,6 +128,9 @@ class SpineObjectWrapper : public REFCOUNTED {
 
 	Object *spine_owner;
 	void *spine_object;
+#if VERSION_MAJOR <= 3
+	ObjectID spine_owner_id;
+#endif
 
 protected:
 	static void _bind_methods() {
@@ -136,10 +144,26 @@ protected:
 #else
 		spine_owner->disconnect(SNAME("_internal_spine_objects_invalidated"), this, SNAME("_internal_spine_objects_invalidated"));
 #endif
+		spine_owner = nullptr;
 	}
 
-	SpineObjectWrapper() : spine_owner(nullptr), spine_object(nullptr) {
+	SpineObjectWrapper() : spine_owner(nullptr), spine_object(nullptr)
+#if VERSION_MAJOR <= 3
+		, spine_owner_id(0)
+#endif
+	{
 	}
+
+#if VERSION_MAJOR <= 3
+	~SpineObjectWrapper() {
+		if (!spine_object) return;
+		auto owner = ObjectDB::get_instance(spine_owner_id);
+		if (!owner) return;
+		if (owner->is_connected(SNAME("_internal_spine_objects_invalidated"), this, SNAME("_internal_spine_objects_invalidated"))) {
+			owner->disconnect(SNAME("_internal_spine_objects_invalidated"), this, SNAME("_internal_spine_objects_invalidated"));
+		}
+	}
+#endif
 
 	template<typename OWNER, typename OBJECT>
 	void _set_spine_object_internal(const OWNER *_owner, OBJECT *_object) {
@@ -157,6 +181,9 @@ protected:
 		}
 
 		spine_owner = (Object *) _owner;
+#if VERSION_MAJOR <= 3
+		spine_owner_id = spine_owner->get_instance_id();
+#endif
 		spine_object = _object;
 #if VERSION_MAJOR > 3
 		spine_owner->connect(SNAME("_internal_spine_objects_invalidated"), callable_mp(this, &SpineObjectWrapper::spine_objects_invalidated));

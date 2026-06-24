@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### spine-core
+
+- Port of 50e82f31: Fixed constraints overwriting bone transforms from other constraints.
+
+## 4.3.8 - 2026-06-19
+
+### spine-construct3
+
+- Added the official spine-construct3 runtime/plugin.
+
 ### spine-ts
 
 - Updated release automation to publish from `spine-ts-x.y.z` tags via GitHub Actions and npm trusted publishing.

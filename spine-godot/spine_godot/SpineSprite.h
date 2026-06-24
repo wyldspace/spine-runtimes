@@ -37,8 +37,13 @@
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/canvas_item_material.hpp>
+#include <godot_cpp/classes/font.hpp>
 #else
 #include "scene/2d/node_2d.h"
+#include "scene/resources/font.h"
+#if VERSION_MAJOR > 3
+#include "servers/rendering/rendering_server.h"
+#endif
 #endif
 
 class SpineSlotNode;
@@ -75,7 +80,11 @@ protected:
 
 #if VERSION_MAJOR > 3
 	RID mesh;
+#if !defined(SPINE_GODOT_EXTENSION) && VERSION_MAJOR >= 4 && VERSION_MINOR >= 7
+	uint32_t surface_offsets[RenderingServerEnums::ARRAY_MAX];
+#else
 	uint32_t surface_offsets[RS::ARRAY_MAX];
+#endif
 	int num_vertices;
 	int num_indices;
 	PackedByteArray vertex_buffer;
@@ -161,6 +170,7 @@ protected:
 
 	spine::Array<spine::Array<SpineSlotNode *>> slot_nodes;
 	Vector<SpineMesh2D *> mesh_instances;
+	Ref<Font> debug_font;
 	Ref<Material> normal_material;
 	Ref<Material> additive_material;
 	Ref<Material> multiply_material;
